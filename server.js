@@ -4,10 +4,11 @@ const WebSocket = require('ws')
 const express = require('express')
 const compression = require('compression')
 const { database } = require('./database')
+require('dotenv').config({ path: '.env.local' })
 
 const app = express()
 const server = http.createServer(app)
-const websocket_server = new WebSocket.Server({ server, path: process.env.CLIENT_WEBSOCKET_PATH })
+const websocket_server = new WebSocket.Server({ server, path: process.env.VITE_WEBSOCKET_PATH })
 
 app.use(compression())
 app.use(express.json())

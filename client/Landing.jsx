@@ -3,7 +3,6 @@ import { useHistory } from 'react-router-dom'
 import GameContext, { DefaultContext } from './GameContext'
 import Board from './Board'
 import { BASE_URI } from './config'
-
 import './assets/css/App.css'
 
 function Modal({ visible, setVisible, link }) {
@@ -57,8 +56,8 @@ function Landing() {
 			<GameContext.Provider value={DefaultContext}>
 				<Board scaled />
 			</GameContext.Provider>
-			<div>A strategic board game for 2 players.<br/>Read the <a href='https://en.wikipedia.org/wiki/Ultimate_tic-tac-toe' target='_blank'>wikipedia</a> page for the rules.</div><br/>
-			<a href='#' onClick={() => setModalVisible(true)}>Start Game</a>
+			<div>A strategic board game for 2 players.<br/>Read the <a href='https://en.wikipedia.org/wiki/Ultimate_tic-tac-toe' target='_blank'>wikipedia page</a> for the rules.</div><br/>
+			<a href='#' onClick={() => setModalVisible(true)}>Start Game</a><br/><br/>
 			<Modal visible={modalVisible} setVisible={setModalVisible} link={link}/>
 		</div>
   )
