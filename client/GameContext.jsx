@@ -3,22 +3,24 @@ import { createContext } from 'react'
 const GameContext = createContext()
 
 export const DefaultContext = {
-	player: 0,
-	current_player: 0,
-	players: ['AI', 'AI'],
-	names: ['Robot #1', 'Robot #2'],
+	score: null,  // null -> game on,  0 -> draw, +1/-1 -> winner
+	player: 1,
+	current_player: 1,
+	players: {1: 'AI', '-1': 'AI'},
+	names: {1: 'Robot #1', '-1': 'Robot #2'},
 	last_move: null,
-	turn_delay: 2000, // in ms
-	board: new Array(3).fill(-1).map(() => new Array(3).fill(-1).map(() => new Array(3).fill(-1).map(() => new Array(3).fill(-1)))),
-	acquired: new Array(3).fill(-1).map(() => new Array(3).fill(-1))
+	turn_delay: 4000, // in ms
+	board: new Array(3).fill(0).map(() => new Array(3).fill(0).map(() => new Array(3).fill(0).map(() => new Array(3).fill(0)))),
+	acquired: new Array(3).fill(0).map(() => new Array(3).fill(0))
 }
 
 export const InitialContext = {
-	current_player: 0,
+	score: null,  // null -> game on,  0 -> draw, +1/-1 -> winner
+	current_player: 1,
 	last_move: null,
 	turn_delay: 2000,
-	board: new Array(3).fill(-1).map(() => new Array(3).fill(-1).map(() => new Array(3).fill(-1).map(() => new Array(3).fill(-1)))),
-	acquired: new Array(3).fill(-1).map(() => new Array(3).fill(-1))
+	board: new Array(3).fill(0).map(() => new Array(3).fill(0).map(() => new Array(3).fill(0).map(() => new Array(3).fill(0)))),
+	acquired: new Array(3).fill(0).map(() => new Array(3).fill(0))
 }
 
 export default GameContext

@@ -43,12 +43,12 @@ function Game(props) {
 		if (props.history.location.state) {
 			let { player1, player2 } = props.history.location.state
 			let ctx = Object.assign({}, InitialContext, {
-				roles: {[userid]: 0},
-				players: [player1, player2 == 'HUMAN2' ? 'HUMAN' : player2]
+				roles: {[userid]: 1},
+				players: {1: player1, '-1': (player2 == 'HUMAN2' ? 'HUMAN' : player2)}
 			})
-			ctx.names = [player1 == 'HUMAN' ? player_name : 'Computer', player2 == 'HUMAN' ? player_name : (player2 == 'AI' ? 'Computer' : '')]
+			ctx.names = {1: (player1 == 'HUMAN' ? player_name : 'Computer'), '-1': (player2 == 'HUMAN' ? player_name : (player2 == 'AI' ? 'Computer' : ''))}
 			if (player2 != 'HUMAN2') {
-				ctx.player = player1 == 'HUMAN' ? 0 : 1
+				ctx.player = player1 == 'HUMAN' ? 1 : -1
 				setContext(ctx)
 			}
 			else {
@@ -61,7 +61,7 @@ function Game(props) {
 				.then(checkStatus)
 				.then(parseJSON)
 				.then(({ result }) => {
-					ctx.player = 0
+					ctx.player = 1
 					setContext(ctx)
 				})
 				.catch(error => console.error(error))
@@ -81,8 +81,8 @@ function Game(props) {
 					return
 				}
 				if (!(userid in ctx.roles)) {
-					ctx.roles[userid] = 1
-					ctx.names[1] = player_name
+					ctx.roles[userid] = -1
+					ctx.names['-1'] = player_name
 				}
 				ctx.player = ctx.roles[userid]
 				setContext(ctx)
@@ -92,13 +92,13 @@ function Game(props) {
 	}, [player_name])
 
 	useEffect(() => {
-		if (context && context.players.every(p => p == 'HUMAN')) {
+		if (context && Object.values(context.players).every(p => p == 'HUMAN')) {
 			setUpWebSocket(
 				webSocket,
 				setWebSocket,
 				data => {
 					if ('name' in data) {
-						context.names[1 - context.player] = data.name
+						context.names[`${-1 * context.player}`] = data.name
 						data = context
 					}
 					data.player = context.player
@@ -115,10 +115,12 @@ function Game(props) {
 			<Modal visible={modalVisible} setVisible={setModalVisible} gameid={gameid}/>
 			{ context && (
 				<GameContext.Provider value={context}>
-					<Board sendToServer={new_ctx => {
-						if (context.players.every(p => p == 'HUMAN'))
-							 webSocket.send(JSON.stringify({gameid, context: new_ctx}))
-					}}/>
+					<Board
+						sendToServer={new_ctx => {
+							if (Object.values(context.players).every(p => p == 'HUMAN'))
+								webSocket.send(JSON.stringify({gameid, context: new_ctx}))
+						}}
+					/>
 				</GameContext.Provider>
 			)}
 		</>

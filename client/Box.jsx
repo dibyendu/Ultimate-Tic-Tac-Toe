@@ -18,14 +18,14 @@ function Box({ row, column, className, handleMove, winner }) {
 										key={index}
 										className={className}
 										onClick={() => {
-											if (context.players.every(p => p == 'AI') || winner != null) return
-											if (className != 'available' || context.board[row][column][r][c] != -1)
+											if (Object.values(context.players).every(p => p == 'AI') || winner != null) return
+											if (className != 'available' || context.board[row][column][r][c] != 0)
 												return handleMove({error: 'Invalid Move'})
 											else if (context.player != context.current_player)
 												return handleMove({error: "Opponent's Turn"})
 											handleMove({R: row, C: column, r, c})
 										}}>
-										<div className={{0: 'tic', 1: 'tac', '-1': ''}[context.board[row][column][r][c]]}/>
+										<div className={{1: 'tic', '-1': 'tac', 0: ''}[context.board[row][column][r][c]] + (context.last_move && context.last_move.R == row && context.last_move.C == column && context.last_move.r == r && context.last_move.c == c ? ' animate' : '')}/>
 									</td>
 								))
 							}

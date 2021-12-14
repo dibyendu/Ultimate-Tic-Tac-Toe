@@ -165,3 +165,36 @@ input {
 *:focus {
   outline: none
 }
+
+.animate {
+	box-sizing: border-box;
+	border-style: solid;
+	animation-name: bounce;
+  animation-duration: 1.5s;
+	animation-iteration-count: 2;
+}
+
+@keyframes bounce {
+  from {
+    transform: scale(1);
+		border-width: 4px
+  }
+	50% {
+    transform: scale(1.5);
+		border-width: 0
+  }
+  to {
+    transform: scale(1);
+		border-width: 4px
+  }
+}
+
+.animate.tic {
+	border-color:#46d7ff;
+	background-color: #46d7ff80 !important
+}
+
+.animate.tac {
+	border-color:#FF5F5C;
+	background-color: #FF5F5C80 !important
+}

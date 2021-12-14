@@ -52,6 +52,8 @@ websocket_server.on('connection', ws => {
 	})
 })
 
+app.get('/model/:file', (req, res) => res.sendFile(path.join(__dirname, 'AlphaZeroAgent/trained_model', req.params.file)))
+
 app.get('*', (_, res) => res.sendFile(path.join(__dirname, 'build', 'index.html')))
 
 server.listen(process.env.PORT, () => {

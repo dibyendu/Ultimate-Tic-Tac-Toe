@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useHistory } from 'react-router-dom'
+import * as tf from '@tensorflow/tfjs'
 import GameContext, { DefaultContext } from './GameContext'
 import Board from './Board'
 import { BASE_URI } from './config'
 import './assets/css/App.css'
+
 
 function Modal({ visible, setVisible, link }) {
 
