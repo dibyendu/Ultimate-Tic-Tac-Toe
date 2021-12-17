@@ -1,3 +1,5 @@
+const fs = require('fs')
+const cors = require('cors')
 const http = require('http')
 const path = require('path')
 const WebSocket = require('ws')
@@ -5,6 +7,8 @@ const express = require('express')
 const compression = require('compression')
 const { database } = require('./database')
 require('dotenv').config({ path: '.env.local' })
+
+const MODEL_LOCATION = 'AlphaZeroAgent/trained_model'
 
 const app = express()
 const server = http.createServer(app)
@@ -52,7 +56,13 @@ websocket_server.on('connection', ws => {
 	})
 })
 
-app.get('/model/:file', (req, res) => res.sendFile(path.join(__dirname, 'AlphaZeroAgent/trained_model', req.params.file)))
+app.get('/check-saved-model', (_, res) => {
+	if (!fs.existsSync(`./${MODEL_LOCATION}/model.json`))
+		return res.status(200).send({found: false})
+	res.status(200).send({found: true})
+})
+
+app.get('/model/:file', cors(), (req, res) => res.sendFile(path.join(__dirname, MODEL_LOCATION, req.params.file)))
 
 app.get('*', (_, res) => res.sendFile(path.join(__dirname, 'build', 'index.html')))
 

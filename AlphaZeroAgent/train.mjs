@@ -84,7 +84,7 @@ async function train(policy, exploration_depth, temperature) {
 
 	while (game_tree.outcome == null) {
 
-		[...Array(exploration_depth).keys()].forEach(() => game_tree.explore(policy))
+		new Array(exploration_depth).fill(null).forEach(() => game_tree.explore(policy))
 
 		let [game_tree_next, {nn_input, true_prob}] = game_tree.next(temperature=temperature)
 
@@ -169,10 +169,10 @@ async function train(policy, exploration_depth, temperature) {
 	let last_game_idx = 0, logs = []
 
 	if (fs.existsSync(`./${MODEL_DIRECTORY}/model.json`)) {
-		let logs = JSON.parse(fs.readFileSync(`./${MODEL_DIRECTORY}/logs.json`))
-		last_game_idx = logs.game
-		logs = logs.logs
-		await policy.load(`file://./${MODEL_DIRECTORY}/model.json`)
+		let past = JSON.parse(fs.readFileSync(`./${MODEL_DIRECTORY}/logs.json`))
+		last_game_idx = past.game
+		logs = past.logs
+		policy.load(await tf.loadLayersModel(`file://./${MODEL_DIRECTORY}/model.json`))
 		logs.forEach(([history, steps, outcome], id) => {
 			console.log(`Game #${(id+1).toString().padStart(5, '0')}:\t Winner: ${outcome == 1 ? 'x' : (outcome == -1 ? 'o' : '-')} (${steps.toString().padStart(3, '0')} steps)\t Loss: ${history.loss[0].toFixed(10)}\t Action Loss: ${history.ActionProbabilities_loss[0].toFixed(10)}\t Value Loss ${history.Value_loss[0].toFixed(10)}`)
 		})
@@ -186,9 +186,9 @@ async function train(policy, exploration_depth, temperature) {
 		console.log(`Game #${game_idx.toString().padStart(5, '0')}:\t Winner: ${outcome == 1 ? 'x' : (outcome == -1 ? 'o' : '-')} (${steps.toString().padStart(3, '0')} steps)\t Loss: ${history.loss[0].toFixed(10)}\t Action Loss: ${history.ActionProbabilities_loss[0].toFixed(10)}\t Value Loss ${history.Value_loss[0].toFixed(10)}`)
 
 		if (game_idx % SAVE_EVERY == 0) {
+			console.log(`Saving after Game#${game_idx} (${logs.length} previous games) ...`)
 			await policy.save(`file://./${MODEL_DIRECTORY}`)
 			fs.writeFileSync(`./${MODEL_DIRECTORY}/logs.json`, JSON.stringify({game: game_idx, logs}))
 		}
-
 	}
 })()

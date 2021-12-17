@@ -116,6 +116,7 @@ function Game(props) {
 			{ context && (
 				<GameContext.Provider value={context}>
 					<Board
+						worker={props.worker}
 						sendToServer={new_ctx => {
 							if (Object.values(context.players).every(p => p == 'HUMAN'))
 								webSocket.send(JSON.stringify({gameid, context: new_ctx}))

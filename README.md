@@ -1,13 +1,16 @@
-## Running React on Repl.it
+### To train the agent
 
-[React](https://reactjs.org/) is a popular JavaScript library for building user interfaces.
+- set the training parameters in [train.mjs](#AlphaZeroAgent/train.mjs)
+- `node train.mjs`
 
-[Vite](https://vitejs.dev/) is a blazing fast frontend build tool that includes features like Hot Module Reloading (HMR), optimized builds, and TypeScript support out of the box.
+### To run the app
 
-Using the two in conjunction is one of the fastest ways to build a web app.
+- `npm run build`
+- Hit run or `npm run serve`
 
-### Getting Started
-- Hit run
-- Edit [client/Landing.jsx](#client/Landing.jsx) and watch it live update!
+### Development
 
-By default, Replit runs the `start` script, but you can configure it by changing the `run` field in the `.replit` file.
+Run `npm start`, edit [client/Landing.jsx] (#client/Landing.jsx) and watch it live update!
+
+
+By default, Replit runs the `start` script, but you can configure it by changing the `run` field in the [.replit](.replit) file.

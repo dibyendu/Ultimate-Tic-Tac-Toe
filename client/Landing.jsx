@@ -47,7 +47,7 @@ function Modal({ visible, setVisible, link }) {
   )
 }
 
-function Landing() {
+function Landing({ worker }) {
 
 	const [modalVisible, setModalVisible] = useState(false)
 	const [link, _] = useState(Math.floor(Math.random() * 900000) + 100000)
@@ -56,7 +56,7 @@ function Landing() {
 		<div style={{ textAlign: 'center' }}>
 			<h2>Ultimate Tic Tac Toe</h2><br/>
 			<GameContext.Provider value={DefaultContext}>
-				<Board scaled />
+				<Board worker={worker} scaled />
 			</GameContext.Provider>
 			<div>A strategic board game for 2 players.<br/>Read the <a href='https://en.wikipedia.org/wiki/Ultimate_tic-tac-toe' target='_blank'>wikipedia page</a> for the rules.</div><br/>
 			<a href='#' onClick={() => setModalVisible(true)}>Start Game</a><br/><br/>

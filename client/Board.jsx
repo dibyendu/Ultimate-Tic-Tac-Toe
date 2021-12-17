@@ -1,36 +1,26 @@
 import React, { useState, useEffect, useContext } from 'react'
-import GameContext from './GameContext'
-import { BASE_URI } from './config'
+
 import Box from './Box'
-import { action } from './PlayerAgent'
-import { Policy } from '../AlphaZeroAgent/Policy.mjs'
+import GameContext from './GameContext'
 import { Game } from '../AlphaZeroAgent/Game.mjs'
+
 import './assets/css/App.css'
 
-
-
-function Board({ scaled, sendToServer }) {
+function Board({ worker, scaled, sendToServer }) {
 
 	const context = useContext(GameContext)
 	const [winner, setWinner] = useState(null)
-	const [policy, setPolicy] = useState(null)
 	const [message, setMessage] = useState('')
 	const [showMessage, setShowMessage] = useState(false)
 	const [availableBoxes, setAvailableBoxes] = useState([])
+
+	worker.onerror = error => console.error(error)
+	worker.onmessage = ({data: { move }}) => handleMove(move)
 
 	useEffect(() => {
 		if (showMessage)
 			setTimeout(() => setShowMessage(false), 2000)
 	}, [showMessage])
-
-	useEffect(() => {
-		(async () => {
-			let policy = new Policy(Game.n_states, Game.n_actions)
-			await policy.load(`https://${BASE_URI}/model/model.json`)
-			policy.summary()
-			setPolicy(policy)
-		})()
-	}, [])
 
 	const playTurn = () => {
 		let available = [...context.acquired.map((row, r) => row.map((col, c) => col == 0 ? [r, c] : null)).flat().filter(e => e)]
@@ -40,18 +30,11 @@ function Board({ scaled, sendToServer }) {
 		}
 		setWinner(context.score)
 		setAvailableBoxes(available)
-		if (context.players[`${context.player}`] == 'AI') {
-			if (context.current_player == context.player) {
-				let move = action(context, policy)
-				return handleMove(move)
-			}
-		}
-		if (context.players[`${-1 * context.player}`] == 'AI') {
-			if (context.current_player == -1 * context.player) {
-				let move = action(context, policy)
-				return handleMove(move)
-			}
-		}
+		if (
+			(context.players[`${context.player}`] == 'AI' && context.current_player == context.player) ||
+			(context.players[`${-1 * context.player}`] == 'AI' && context.current_player == -1 * context.player)
+		)
+			worker.postMessage({context})
 	}
 
 	const handleMove = move => {
@@ -70,12 +53,11 @@ function Board({ scaled, sendToServer }) {
 		if (sendToServer) sendToServer(context)
 		if (context.score != null) return
 		setAvailableBoxes(context.acquired[r][c] == 0 ? [[r, c]] : [...context.acquired.map((row, r) => row.map((col, c) => col == 0 ? [r, c] : null)).flat().filter(e => e)])
-		if (Object.values(context.players).some(p => p == 'AI')) setTimeout(playTurn, context.turn_delay)
+		if (Object.values(context.players).some(p => p == 'AI'))
+			playTurn()
 	}
 
-	useEffect(() => {
-		if (policy) playTurn()
-	}, [policy, context])
+	useEffect(playTurn, [context])
 
   return (
 		<div className={scaled ? 'scale-board' : ''}>

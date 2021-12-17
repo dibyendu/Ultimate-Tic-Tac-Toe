@@ -1,4 +1,4 @@
-import * as tf from '@tensorflow/tfjs-node'
+import * as tf from '@tensorflow/tfjs'
 
 
 class ActionProbabilityLayer extends tf.layers.Layer {
@@ -182,8 +182,8 @@ export class Policy {
 		await this.#model.save(location)
 	}
 
-	async load(location) {
-		this.model = await tf.loadLayersModel(location)
+	load(model) {
+		this.model = model
 		this.compile()
 	}
 

@@ -3,8 +3,8 @@ import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
 import Landing from './Landing'
 import Game from './Game'
 
-function Routes() {
-	
+function Routes({ worker }) {
+
 	useEffect(() => {
 		if (!localStorage.getItem('userid'))
 			localStorage.setItem('userid', Math.floor(Math.random() * 900000) + 100000)
@@ -13,8 +13,12 @@ function Routes() {
   return (
 		<Router>
 			<Switch>
-				<Route exact path='/' component={Landing} />
-				<Route path='/:gameid' component={Game} />
+				<Route exact path='/'>
+					<Landing worker={worker} />
+				</Route>
+				<Route path='/:gameid'>
+					<Game worker={worker} />
+				</Route>
 			</Switch>
 		</Router>
   )
