@@ -18,13 +18,15 @@ export class Game {
 		this.#available = this.calculateAvailable()
   }
 
-	static isAcquired(block, player) {
+	static transposeBlock(block) {
+		return block[0].map((x, i) => block.map(x => x[i]))
+	}
 
-		const transpose = block => block[0].map((x, i) => block.map(x => x[i]))
+	static isAcquired(block, player) {
 
 		if (block.map(r => r.every(val => val == player)).some(val => val))
 			return true
-		else if (transpose(block).map(r => r.every(val => val == player)).some(val => val))
+		else if (Game.transposeBlock(block).map(r => r.every(val => val == player)).some(val => val))
 			return true
 		else if (block.map((e, i) => e[i]).every(val => val == player))
 			return true
@@ -33,22 +35,6 @@ export class Game {
 		else
 			return false
 	}
-
-	get state() {
-    return this.#game.board.flat().flat().flat()
-  }
-
-	get action() {
-    return this.#game.last_move
-  }
-
-	static get n_actions() {
-    return 81
-  }
-
-	static get n_states() {
-    return 81
-  }
 	
 	get available() {
 		let available_mask = new Array(this.constructor.n_actions).fill(true)
@@ -60,6 +46,22 @@ export class Game {
     return available_mask
   }
 
+	get board() {
+		return this.#game.board
+	}
+
+	get acquired() {
+		return this.#game.acquired
+	}
+
+	get action() {
+    return this.#game.last_move
+  }
+
+	static get n_actions() {
+    return 81
+  }
+
 	get score() {
     return this.#game.score
   }
@@ -69,7 +71,7 @@ export class Game {
   }
 
 	clone() {
-		return new Game(cloneDeep(this.#game))
+		return new Game(this.#game)
 	}
 
 	move(action) {
@@ -85,11 +87,11 @@ export class Game {
 		if (action < 0 || action > 80 || !this.#available[R][C] || this.#game.board[R][C][r][c] != 0)
 			throw `Invalid move ${action} {R: ${R}, C: ${C}, r: ${r}, c: ${c}}`
 
-		this.#game.board[R][C][r][c] = this.#game.current_player
 		this.#game.last_move = {R, C, r, c}
+		this.#game.board[R][C][r][c] = this.#game.current_player
 		this.#game.acquired[R][C] = this.#game.acquired[R][C] != 0 ? this.#game.acquired[R][C] : (Game.isAcquired(this.#game.board[R][C], this.#game.current_player) ? this.#game.current_player : (this.#game.board[R][C].flat().includes(0) ? 0 : 2))
 		this.#game.score = Game.isAcquired(this.#game.acquired, this.#game.current_player) ? this.#game.current_player : (this.#game.acquired.flat().some(e => e == 0) ? null : 0)
-		this.#game.current_player = -1 * this.#game.current_player
+		this.#game.current_player *= this.#game.score == null ? -1 : 1
 		this.#available = this.calculateAvailable()
 	}
 
@@ -98,7 +100,7 @@ export class Game {
 		
 		let available = this.#available
 		let board = [...Array(3).keys()].map(R => ' ' + [...Array(3).keys()].map(r => [...Array(3).keys()].map(C => this.#game.board[R][C][r].map(cell => ({1: 'x', '-1': 'o', 0: ' '}[cell])).join('')).join(' | ')).join(' \n ') + ' \n').join('-----+-----+-----\n').split('\n')
-		let acquired = this.#game.acquired.map(row => ' ' + row.map(cell => ({1: 'x', '-1': 'o', 0: ' ', 2: '-', '-2': '-'}[cell])).join(' | ') + ' ').join('\n' + '---+---+---' + '\n').split('\n')
+		let acquired = this.#game.acquired.map(row => ' ' + row.map(cell => ({1: 'x', '-1': 'o', 0: ' ', 2: '-'}[cell])).join(' | ') + ' ').join('\n' + '---+---+---' + '\n').split('\n')
 		
 		available = available.map(row => ' ' + row.map(cell => cell ? ' ' : '-').join(' | ') + ' ').join('\n' + '---+---+---' + '\n').split('\n')
 		
@@ -120,5 +122,3 @@ export class Game {
 		return available
 	}	
 }
-
-// exports.Game = Game

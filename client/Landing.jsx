@@ -1,17 +1,22 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useContext } from 'react'
 import { useHistory } from 'react-router-dom'
-import * as tf from '@tensorflow/tfjs'
-import GameContext, { DefaultContext } from './GameContext'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faClipboard } from '@fortawesome/free-solid-svg-icons'
+import { MutatingDots } from  'react-loader-spinner'
+import GameContext, { WorkerContext, DefaultContext } from './GameContext'
 import Board from './Board'
-import { BASE_URI } from './config'
+import { PROTOCOL, BASE_URI } from './config'
+import PlayerAgent from './AgentWorker?worker'
 import './assets/css/App.css'
 
 
 function Modal({ visible, setVisible, link }) {
 
+	const { worker, setWorker } = useContext(WorkerContext)
 	const [player1, setPlayer1] = useState('HUMAN')
 	const [player2, setPlayer2] = useState('AI')
 	const [shareGame, setShareGame] = useState(false)
+	const [copied, setCopied] = useState(false)
 	const history = useHistory()
 
 	useEffect(() => {
@@ -36,9 +41,27 @@ function Modal({ visible, setVisible, link }) {
 					<option value='HUMAN2'>Human</option>
 				</select><br/><br/>
 				{
-					shareGame && 	<><span className='f-left'>Share the link with your opponent</span><input className='f-right' readOnly value={`${BASE_URI}/${link}`}/><br/><br/></>
+					shareGame && 	<>
+						<p style={{textAlign: 'left'}}>Share the link with your opponent</p>
+						<div>
+							<input id='link' className='f-left' readOnly value={`${PROTOCOL}://${BASE_URI}/${link}`}/>
+							<button
+								title={copied ? 'Link copied' : 'Copy the link'}
+								className='f-right inline' onClick={() => {
+									document.querySelector('#link').select()
+									document.execCommand('copy')
+									setCopied(true)
+								}}
+							>
+								<FontAwesomeIcon icon={faClipboard} />
+							</button>
+						</div>
+						<br/><br/>
+					</>
 				}
 				<span className='f-right'><button onClick={() => setVisible(false)}>Cancel</button>&nbsp;&nbsp;&nbsp;&nbsp;<button onClick={() => {
+					worker.terminate()
+					setWorker(new PlayerAgent())
 					setVisible(false)
 					history.push(`/${link}`, {player1, player2})
 				}}>Go</button></span><br/>
@@ -47,20 +70,42 @@ function Modal({ visible, setVisible, link }) {
   )
 }
 
-function Landing({ worker }) {
+function Landing() {
 
-	const [modalVisible, setModalVisible] = useState(false)
+  const { worker } = useContext(WorkerContext)
+	const [loaded, setLoaded] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [modalVisible, setModalVisible] = useState(false)
 	const [link, _] = useState(Math.floor(Math.random() * 900000) + 100000)
+
+  worker.onerror = error => console.error(error)
+	worker.onmessage = ({data: { percentage }}) => {
+    if (percentage == 'done')
+      setLoaded(true)
+    else
+      setProgress(percentage * 100)
+  }
 
 	return (
 		<div style={{ textAlign: 'center' }}>
 			<h2>Ultimate Tic Tac Toe</h2><br/>
-			<GameContext.Provider value={DefaultContext}>
-				<Board worker={worker} scaled />
-			</GameContext.Provider>
-			<div>A strategic board game for 2 players.<br/>Read the <a href='https://en.wikipedia.org/wiki/Ultimate_tic-tac-toe' target='_blank'>wikipedia page</a> for the rules.</div><br/>
-			<a href='#' onClick={() => setModalVisible(true)}>Start Game</a><br/><br/>
-			<Modal visible={modalVisible} setVisible={setModalVisible} link={link}/>
+      {!loaded ? (
+        <div style={{ width: 140, margin: '0 auto', textAlign: 'center' }}>
+          <MutatingDots color='#46d7ff' secondaryColor='#FF5F5C' height={140} width={140} arialLabel='loading' />
+          <p style={{ fontSize: 12 }}>{`Loading AI Agent (${progress}%)`}</p>
+        </div>
+      ) : (
+        <GameContext.Provider value={DefaultContext}>
+          <Board scaled />
+        </GameContext.Provider>
+      )}
+			<div>A strategic board game for 2 players.<br/>Read the <a href='https://en.wikipedia.org/wiki/Ultimate_tic-tac-toe' target='_blank' rel='noreferrer'>wikipedia page</a> for the rules.</div><br/>
+      {loaded && (
+        <div>
+          <a href='#' onClick={() => setModalVisible(true)}>Start Game</a><br/><br/>
+          <Modal visible={modalVisible} setVisible={setModalVisible} link={link}/>
+        </div>
+      )}
 		</div>
   )
 }

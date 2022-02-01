@@ -1,8 +1,7 @@
 import * as tf from '@tensorflow/tfjs'
 
-
 class ActionProbabilityLayer extends tf.layers.Layer {
-  
+
 	#outputShape
 
 	constructor(config) {
@@ -16,122 +15,146 @@ class ActionProbabilityLayer extends tf.layers.Layer {
   }
 
   /*
-   * call() contains the actual numerical computation of the layer.
+   * call() contains the actual numerical computation of the layer
    *
    * It is "tensor-in-tensor-out". I.e., it receives one or more
-   * tensors as the input and should produce one or more tensors as
-   * the return value.
+   * tensors as the input and should produce one or more tensors as the return value
    *
-   * Be sure to use tidy() to avoid WebGL memory leak. 
+   * Be sure to use tidy() to avoid WebGL memory leak 
    */
   call(inputs) {
     return tf.tidy(() => {
-      let [input, available] = inputs[0].split([this.#outputShape, -1], 1)
 
-			available = available.split([this.#outputShape, -1], 1)[0]
+      let [logits, available] = inputs[0].split([this.#outputShape, -1], 1)
 				
-			let exp = available.mul(input.sub(input.max(1).reshape([-1, 1])).exp())
+			let exp = available.mul(logits.exp())
 
 			let probability = exp.div(exp.sum(1).reshape([-1, 1]))
-
-			// console.log('........>>>>>')
-			// console.log(input.arraySync())
-			// console.log(available.arraySync())
-			// console.log(probability.arraySync())
-			// console.log('........<<<<<')
 
 			return probability
     })
   }
 
-  /*
-   * getConfig() generates the JSON object that is used
-   * when saving and loading the custom layer object.
-   */
+  // getConfig() generates the JSON object that is used when saving and loading the custom layer object
   getConfig() {
 		const config = super.getConfig()
     Object.assign(config, {targetShape: this.#outputShape})
     return config
   }
   
-  /*
-   * The static className getter is required by the 
-   * registration step (see below).
-   */
+  // The static className getter is required by the registration step
   static get className() {
     return 'ActionProbabilityLayer'
   }
 }
 
-
-/*
- * Regsiter the custom layer, so TensorFlow.js knows what class constructor
- * to call when deserializing an saved instance of the custom layer.
- */
+// Regsiter the custom layer, so TensorFlow.js knows what class constructor to call when deserializing an saved instance of the custom layer
 tf.serialization.registerClass(ActionProbabilityLayer)
+
 
 
 export class Policy {
 
 	#model
-	#weight_decay
 	#learning_rate
+  #regularization_factor
 
-	constructor(n_state, n_action, learning_rate=0, weight_decay=0) {
-		this.#weight_decay = weight_decay
+  resnet_block(input) {
+    let identity = input
+
+    input = tf.layers.dense({
+      units: 1024,
+      activation: 'relu',
+      kernelRegularizer: tf.regularizers.l2({
+        l2: this.#regularization_factor
+      })
+    }).apply(input)
+
+    input = tf.layers.dense({
+      units: 1024,
+      kernelRegularizer: tf.regularizers.l2({
+        l2: this.#regularization_factor
+      })
+    }).apply(input)
+
+    input = tf.layers.add().apply([input, identity])
+
+    input = tf.layers.reLU().apply(input)
+
+    return input
+  }
+
+	constructor(n_state, n_action, learning_rate=1e-2, regularization_factor=1e-4) {
 		this.#learning_rate = learning_rate
+    this.#regularization_factor = regularization_factor
+
+		let state = tf.input({ shape: n_state, dtype: 'float32', name: 'State' }),
+				available_action_mask = tf.input({ shape: [n_action], dtype: 'float32', name: 'AvailableActions' })
+
+    let logits = tf.layers.dense({
+      units: 1024,
+      activation: 'relu',
+      kernelRegularizer: tf.regularizers.l2({
+        l2: this.#regularization_factor
+      })
+    }).apply(state)
+
+    // 12 resnet blocks
+		logits = this.resnet_block(logits)
+		logits = this.resnet_block(logits)
+		logits = this.resnet_block(logits)
+    logits = this.resnet_block(logits)
+    logits = this.resnet_block(logits)
+    logits = this.resnet_block(logits)
+    logits = this.resnet_block(logits)
+    logits = this.resnet_block(logits)
+    logits = this.resnet_block(logits)
+    logits = this.resnet_block(logits)
+    logits = this.resnet_block(logits)
+    logits = this.resnet_block(logits)
+
+    let policy_hidden_1 = tf.layers.dense({
+      units: 512,
+      activation: 'relu',
+      kernelRegularizer: tf.regularizers.l2({
+        l2: this.#regularization_factor
+      })
+    }).apply(logits)
+
+    let policy_hidden_2 = tf.layers.dense({
+      units: n_action,
+      kernelRegularizer: tf.regularizers.l2({
+        l2: this.#regularization_factor
+      })
+    }).apply(policy_hidden_1)
     
-		const state = tf.input({ shape: [n_state], dtype: 'float32', name: 'State' }),
-					available_action_mask = tf.input({ shape: [n_action], dtype: 'float32', name: 'AvailableActions' }),
-					current_player = tf.input({ shape: [1], dtype: 'float32', name: 'CurrentPlayer' })
+    let policy = new ActionProbabilityLayer({
+      name: 'ActionProbabilities',
+      targetShape: n_action
+    }).apply(
+      tf.layers.concatenate().apply([policy_hidden_2, available_action_mask])
+    )
 
-		const state_for_current_player = tf.layers.multiply().apply([
-			state,
-			tf.layers.reshape({ targetShape: [n_state] }).apply(
-				tf.layers.repeatVector({n: n_state, inputShape: [1]}).apply(current_player)
-			)
-		])
+    let value_hidden = tf.layers.dense({
+      units: 512,
+      activation: 'relu',
+      kernelRegularizer: tf.regularizers.l2({
+        l2: this.#regularization_factor
+      })
+    }).apply(logits)
 
-		// const conv_layer = tf.layers.flatten().apply(
-		// 	tf.layers.conv2d({ filters: 16, kernelSize: 3, strides: 1, useBias: false }).apply(
-		// 		tf.layers.reshape({ targetShape: [9, 9, 1] }).apply(state_for_current_player)
-		// 	)
-		// )
-
-		const conv_layer = tf.layers.dense({ units: 512, activation: 'relu' }).apply(
-			tf.layers.flatten().apply(
-				tf.layers.conv2d({ filters: 32, kernelSize: 3, strides: 1, useBias: false }).apply(
-					tf.layers.conv2d({ filters: 16, kernelSize: 3, strides: 1, useBias: false }).apply(
-						tf.layers.reshape({ targetShape: [9, 9, 1] }).apply(state_for_current_player)
-					)
-				)
-			)
-		)
-
-		const dense1 = tf.layers.dense({ units: 128, activation: 'relu' }).apply(conv_layer),
-					dense2 = tf.layers.dense({ units: 64, activation: 'relu' }).apply(dense1)
-
-		const action1 = tf.layers.dense({ units: 16, activation: 'relu' }).apply(dense2),
-					action2 = tf.layers.dense({ units: n_action }).apply(action1),
-					action = new ActionProbabilityLayer({ name: 'ActionProbabilities', targetShape: n_action }).apply(
-						tf.layers.concatenate().apply([action2, available_action_mask])
-					)
-
-		const value1 = tf.layers.dense({ units: 8, activation: 'relu' }).apply(dense1),
-					value = tf.layers.dense({ units: 1, activation: 'tanh', name: 'NoLossValue' }).apply(value1),
-					value_for_current_player = tf.layers.multiply({ name: 'Value' }).apply([value, current_player])
+    let value = tf.layers.dense({
+      units: 1,
+      activation: 'tanh',
+      name: 'Value',
+      kernelRegularizer: tf.regularizers.l2({
+        l2: this.#regularization_factor
+      })
+    }).apply(value_hidden)
 
 		this.#model = tf.model({
-			inputs: [
-				state,
-				available_action_mask,
-				current_player
-			],
-			outputs: [
-				action,
-				value,
-				value_for_current_player
-			]
+			inputs: [state, available_action_mask],
+			outputs: [policy, value]
 		})
 
 		this.compile()
@@ -139,22 +162,26 @@ export class Policy {
 
 	compile() {
 		this.#model.compile({
-			loss: {
+      lossWeights: {
+				ActionProbabilities: 1,
+				Value: 1
+			},
+      optimizer: tf.train.rmsprop(this.#learning_rate),
+      // tf.train.sgd(this.#learning_rate)
+      
+      loss: {
 				ActionProbabilities: (truth, prediction) => {
 					let constant = truth.add(Number.EPSILON).log().mul(truth)
 					return prediction.add(Number.EPSILON).log().mul(truth).sub(constant).sum(1).neg().sum()
 
 					// return prediction.add(Number.EPSILON).log().mul(truth).sum(1).neg().sum()
 				},
-				NoLossValue: (_, __) => tf.scalar(0),
 				Value: (truth, prediction) => prediction.squaredDifference(truth).sum()
 			},
-			// lossWeights: {
-			// 	ActionProbabilities: 0.5,
-			// 	Value: 0.5
-			// },
-			optimizer: tf.train.adam(this.#learning_rate, this.#weight_decay),
-			metrics: ['accuracy']
+      metrics: {
+				// ActionProbabilities: 'accuracy',
+				Value: 'mse'
+			}
 		})
 	}
 
@@ -178,6 +205,10 @@ export class Policy {
 		return await this.#model.fit(input, output, options)
 	}
 
+	getWeights() {
+		return this.#model.getWeights()
+	}
+
 	async save(location) {
 		await this.#model.save(location)
 	}
@@ -186,5 +217,4 @@ export class Policy {
 		this.model = model
 		this.compile()
 	}
-
 }

@@ -1,5 +1,4 @@
 build/
 node_modules/
-**/trained_model
 .replit
 .env*

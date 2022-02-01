@@ -1,21 +1,23 @@
 import React, { useState, useEffect, useContext } from 'react'
 
 import Box from './Box'
-import GameContext from './GameContext'
+import GameContext, { WorkerContext } from './GameContext'
 import { Game } from '../AlphaZeroAgent/Game.mjs'
 
 import './assets/css/App.css'
 
-function Board({ worker, scaled, sendToServer }) {
+function Board({ scaled, sendToServer }) {
 
 	const context = useContext(GameContext)
+	const { worker } = useContext(WorkerContext)
+
+	worker.onerror = error => console.error(error)
+	worker.onmessage = ({data: { move }}) => handleMove(move)
+
 	const [winner, setWinner] = useState(null)
 	const [message, setMessage] = useState('')
 	const [showMessage, setShowMessage] = useState(false)
 	const [availableBoxes, setAvailableBoxes] = useState([])
-
-	worker.onerror = error => console.error(error)
-	worker.onmessage = ({data: { move }}) => handleMove(move)
 
 	useEffect(() => {
 		if (showMessage)

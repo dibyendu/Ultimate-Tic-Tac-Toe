@@ -2,6 +2,7 @@ const fs = require('fs')
 const cors = require('cors')
 const http = require('http')
 const path = require('path')
+const helmet = require('helmet')
 const WebSocket = require('ws')
 const express = require('express')
 const compression = require('compression')
@@ -17,6 +18,7 @@ const websocket_server = new WebSocket.Server({ server, path: process.env.VITE_W
 app.use(compression())
 app.use(express.json())
 app.use(express.static(path.join(__dirname, 'build')))
+app.use(helmet())
 
 app.post('/save-game', (req, res) => {
 	const { gameid, game } = req.body
@@ -56,11 +58,7 @@ websocket_server.on('connection', ws => {
 	})
 })
 
-app.get('/check-saved-model', (_, res) => {
-	if (!fs.existsSync(`./${MODEL_LOCATION}/model.json`))
-		return res.status(200).send({found: false})
-	res.status(200).send({found: true})
-})
+app.get('/check-saved-model', (_, res) => res.status(200).send({found: fs.existsSync(`./${MODEL_LOCATION}/model.json`)}))
 
 app.get('/model/:file', cors(), (req, res) => res.sendFile(path.join(__dirname, MODEL_LOCATION, req.params.file)))
 

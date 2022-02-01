@@ -7,7 +7,7 @@ import { Game } from '../AlphaZeroAgent/Game.mjs'
 import { MCTS } from '../AlphaZeroAgent/MCTS.mjs'
 import { Policy } from '../AlphaZeroAgent/Policy.mjs'
 
-const policy = new Policy(Game.n_states, Game.n_actions)
+const policy = new Policy(MCTS.n_states, MCTS.n_actions)
 
 function select_random_position(block) {
 	let available_blocks = block.map((row, r) => row.map((col, c) => col == 0 ? [r, c] : null)).flat().filter(e => e)
@@ -19,14 +19,15 @@ function action(context, using_model=false) {
 	let start = new Date().getTime()
 
 	if (using_model) {
-		let exploration_depth = 100,
-				temperature = 0.1
+		let temperature = 0.1,
+				exploration_depth = 200
 		
 		let game_tree = new MCTS(new Game(context))
 
-		new Array(exploration_depth).fill(null).forEach(() => game_tree.explore(policy))
+		for (let _ of [...Array(exploration_depth).keys()])
+			game_tree.explore(policy)
 		
-		let [game_tree_next, _] = game_tree.next(temperature=temperature)
+		let [game_tree_next, _] = game_tree.next(temperature)
 
 		let elapsed = new Date().getTime() - start
 
@@ -55,17 +56,18 @@ function action(context, using_model=false) {
 	return elapsed >= context.turn_delay ? postMessage({move}) : setTimeout(() => postMessage({move}), context.turn_delay - elapsed)
 }
 
-fetch('/check-saved-model', {
-	method: 'GET',
-	accept: 'application/json'
-})
+fetch('/check-saved-model')
 .then(checkStatus)
 .then(parseJSON)
 .then(async ({ found }) => {
 	if (found) {
-		policy.load(await tf.loadLayersModel(`${PROTOCOL}://${BASE_URI}/model/model.json`))
+		policy.load(await tf.loadLayersModel(`${PROTOCOL}://${BASE_URI}/model/model.json`, {
+      onProgress: percentage => postMessage({percentage})
+    }))
 		self.onmessage = ({data: { context }}) => action(context, true)
+		policy.summary()
 	}
+  postMessage({percentage: 'done'})
 })
 .catch(error => console.error(error))
 

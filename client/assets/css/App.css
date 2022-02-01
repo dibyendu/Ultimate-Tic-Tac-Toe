@@ -148,17 +148,20 @@ select {
 	border: none
 }
 
-button {
+button  {
 	border: 1px dashed #000;
+	cursor: pointer
+}
+
+button:not(.inline)  {
 	background: floralwhite;
 	border-radius: 2px;
-	cursor: pointer;
 	padding: 8px
 }
 
 input {
 	border: none;
-	min-width: 230px;
+	min-width: 90%;
 	border-bottom: 1px dashed black
 }
 

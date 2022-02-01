@@ -12,7 +12,7 @@ function Modal({ visible, setVisible, gameid }) {
   return (
 		<div className='modal-overlay' style={{ display: visible ? 'block' : 'none'}}>
 			<div className='modal-container' style={{ width: '25%' }}>
-				<span className='f-left'>Name</span><input className='f-right' placeholder={message} maxLength={10} value={name} onChange={({target: {value}}) => setName(value)}/><br/><br/>
+				<span className='f-left'>Name</span><br/><input className='f-left' placeholder={message} maxLength={10} value={name} onChange={({target: {value}}) => setName(value)}/><br/><br/>
 				<span className='f-right'><button onClick={() => {
 					if (!name) {
 						setMessage('Enter a valid name')
@@ -116,7 +116,6 @@ function Game(props) {
 			{ context && (
 				<GameContext.Provider value={context}>
 					<Board
-						worker={props.worker}
 						sendToServer={new_ctx => {
 							if (Object.values(context.players).every(p => p == 'HUMAN'))
 								webSocket.send(JSON.stringify({gameid, context: new_ctx}))

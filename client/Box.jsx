@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react'
+import React, { useContext } from 'react'
 import GameContext from './GameContext'
 import './assets/css/App.css'
 

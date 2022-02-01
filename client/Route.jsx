@@ -1,9 +1,14 @@
-import React, { useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
+
 import Landing from './Landing'
 import Game from './Game'
+import { WorkerContext } from './GameContext'
+import PlayerAgent from './AgentWorker?worker'
 
-function Routes({ worker }) {
+function Routes() {
+
+	const [worker, setWorker] = useState(new PlayerAgent())
 
 	useEffect(() => {
 		if (!localStorage.getItem('userid'))
@@ -11,16 +16,14 @@ function Routes({ worker }) {
 	}, [])
 
   return (
-		<Router>
-			<Switch>
-				<Route exact path='/'>
-					<Landing worker={worker} />
-				</Route>
-				<Route path='/:gameid'>
-					<Game worker={worker} />
-				</Route>
-			</Switch>
-		</Router>
+		<WorkerContext.Provider value={{worker, setWorker}}>
+      <Router>
+				<Switch>
+					<Route exact path='/' component={Landing} />
+					<Route path='/:gameid' component={Game} />
+				</Switch>
+			</Router>
+    </WorkerContext.Provider>
   )
 }
 

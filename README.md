@@ -1,7 +1,7 @@
 ### To train the agent
 
-- set the training parameters in [train.mjs](#AlphaZeroAgent/train.mjs)
-- `node train.mjs`
+- set the training parameters in [Train.mjs](#AlphaZeroAgent/Train.mjs)
+- `node Train.mjs`
 
 ### To run the app
 
