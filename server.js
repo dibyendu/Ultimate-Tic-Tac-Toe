@@ -21,44 +21,44 @@ app.use(express.static(path.join(__dirname, 'build')))
 app.use(helmet())
 
 app.post('/save-game', (req, res) => {
-	const { gameid, game } = req.body
-	database.set(gameid, game).then(() => res.status(200).send({result: {success: true}}))
+  const { gameid, game } = req.body
+  database.set(gameid, game).then(() => res.status(200).send({ result: { success: true } }))
 })
 
 app.post('/fetch-game', (req, res) => {
-	const { gameid } = req.body
-	database.get(gameid).then(value => res.status(200).send({ result: value }))
+  const { gameid } = req.body
+  database.get(gameid).then(value => res.status(200).send({ result: value }))
 })
 
 var active_clients = {}
 
 websocket_server.on('connection', ws => {
-	ws.on('message', message => {
-		message = JSON.parse(message)
-		let { register: reg_id, name, gameid, context } = message
-		if (reg_id) {
-			if (!(reg_id in active_clients))
-				active_clients[reg_id] = []
-			active_clients[reg_id] = active_clients[reg_id].filter(socket => socket.readyState === WebSocket.OPEN)
-			active_clients[reg_id].push(ws)
-			active_clients[reg_id].forEach(client => {
-				if (client !== ws && client.readyState === WebSocket.OPEN)
-					client.send(JSON.stringify({ name }))
-			})
-		} else if (context) {
-			let {player, ...game} = context
-			database.set(gameid, game)
-			if (gameid in active_clients) {
-				active_clients[gameid].forEach(client => {
-					if (client !== ws && client.readyState === WebSocket.OPEN)
-						client.send(JSON.stringify(context))
-				})
-			}
-		}
-	})
+  ws.on('message', message => {
+    message = JSON.parse(message)
+    let { register: reg_id, name, gameid, context } = message
+    if (reg_id) {
+      if (!(reg_id in active_clients))
+        active_clients[reg_id] = []
+      active_clients[reg_id] = active_clients[reg_id].filter(socket => socket.readyState === WebSocket.OPEN)
+      active_clients[reg_id].push(ws)
+      active_clients[reg_id].forEach(client => {
+        if (client !== ws && client.readyState === WebSocket.OPEN)
+          client.send(JSON.stringify({ name }))
+      })
+    } else if (context) {
+      let { player, ...game } = context
+      database.set(gameid, game)
+      if (gameid in active_clients) {
+        active_clients[gameid].forEach(client => {
+          if (client !== ws && client.readyState === WebSocket.OPEN)
+            client.send(JSON.stringify(context))
+        })
+      }
+    }
+  })
 })
 
-app.get('/check-saved-model', (_, res) => res.status(200).send({found: fs.existsSync(`./${MODEL_LOCATION}/model.json`)}))
+app.get('/check-saved-model', (_, res) => res.status(200).send({ found: fs.existsSync(`./${MODEL_LOCATION}/model.json`) }))
 
 app.get('/model/:file', cors(), (req, res) => res.sendFile(path.join(__dirname, MODEL_LOCATION, req.params.file)))
 
