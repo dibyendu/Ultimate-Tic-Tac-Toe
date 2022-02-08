@@ -77,16 +77,15 @@ export class Game {
   move(action) {
 
     if (this.#game.score != null)
-    throw `The game is already finished with a ${{ 0: 'draw', 1: "winner 'x'", '-1': "winner 'o'" }[this.#game.score]
-  }`
+    throw `The game is already finished with a ${{ 0: 'draw', 1: "winner 'x'", '-1': "winner 'o'" }[this.#game.score]}`
 
 		let R = parseInt(action / 27),
-				C = parseInt((action  - R * 27) / 9),
-				r = parseInt((action - R * 27 - C * 9) / 3),
-				c = action - R * 27 - C * 9 - r * 3
+      C = parseInt((action  - R * 27) / 9),
+      r = parseInt((action - R * 27 - C * 9) / 3),
+      c = action - R * 27 - C * 9 - r * 3
 
 		if (action < 0 || action > 80 || !this.#available[R][C] || this.#game.board[R][C][r][c] != 0)
-			throw `Invalid move ${ action } { R: ${ R }, C: ${ C }, r: ${ r }, c: ${ c } } `
+			throw `Invalid move ${ action } { R: ${ R }, C: ${ C }, r: ${ r }, c: ${ c } }`
 
 		this.#game.last_move = {R, C, r, c}
 		this.#game.board[R][C][r][c] = this.#game.current_player

@@ -86,49 +86,137 @@
 	<div id='root'></div>
 	<canvas id='chart'></canvas>
 	<script type="text/babel">
-		function App() { const [isTraining, setIsTraining] = React.useState(false) const [chart, setChart] = React.useState(null)
-		const [file, setFile] = React.useState(null) const [data, setData] = React.useState({logs: {training: [], player_elo: [],
-		opponent_elo: []}}) React.useEffect(() => { if (chart) chart.destroy() setChart(new Chart( document.getElementById('chart'),
-		{ type: 'line', data: isTraining ? { labels: new Array(data.logs.training.length).fill(null).map((_, i) => i+1), datasets:
-		[{ label: 'Max Loss', backgroundColor: '#ff595e6e', borderColor: '#ff595e', data: data.logs.training.map(log => log.loss[0]),
-		fill: '+2' }, { label: 'Avg. Loss', backgroundColor: '#ff595e', borderColor: '#ff595e', data: data.logs.training.map(log
-		=> log.loss[1]) }, { label: 'Min Loss', backgroundColor: '#ff595e', borderColor: '#ff595e', data: data.logs.training.map(log
-		=> log.loss[2]) }, { label: 'Max Policy Loss', backgroundColor: '#ffca3a6e', borderColor: '#ffca3a', data: data.logs.training.map(log
-		=> log.ActionProbabilities_loss[0]), fill: '+2' }, { label: 'Avg. Policy Loss', backgroundColor: '#ffca3a', borderColor:
-		'#ffca3a', data: data.logs.training.map(log => log.ActionProbabilities_loss[1]) }, { label: 'Min Policy Loss', backgroundColor:
-		'#ffca3a', borderColor: '#ffca3a', data: data.logs.training.map(log => log.ActionProbabilities_loss[2]) }, { label: 'Max
-		Value Loss', backgroundColor: '#8ac9266e', borderColor: '#8ac926', data: data.logs.training.map(log => log.Value_loss[0]),
-		fill: '+2' }, { label: 'Avg. Value Loss', backgroundColor: '#8ac9266e', borderColor: '#8ac926', data: data.logs.training.map(log
-		=> log.Value_loss[1]) }, { label: 'Min Value Loss', backgroundColor: '#8ac9266e', borderColor: '#8ac926', data: data.logs.training.map(log
-		=> log.Value_loss[2]) }, { label: 'Max Value MSE', backgroundColor: '#6a4c936e', borderColor: '#6a4c93', data: data.logs.training.map(log
-		=> log.Value_mse[0]), fill: '+2' }, { label: 'Avg. Value MSE', backgroundColor: '#6a4c93', borderColor: '#6a4c93', data:
-		data.logs.training.map(log => log.Value_mse[1]) }, { label: 'Min Value MSE', backgroundColor: '#6a4c93', borderColor: '#6a4c93',
-		data: data.logs.training.map(log => log.Value_mse[2]) }] } : { labels: new Array(data.logs.player_elo.length).fill(null).map((_,
-		i) => i+1), datasets: [{ label: 'Latest Model', backgroundColor: '#ff595e', borderColor: '#ff595e', data: data.logs.player_elo
-		}, { label: 'Opponent', backgroundColor: '#ffca3a', borderColor: '#ffca3a', data: data.logs.opponent_elo }] }, options:
-		{ responsive: true, plugins: { legend: { position: 'top', }, title: { display: true, text: 'Training History' } } }, }
-		)) }, [isTraining, data]) return (
-		<div>
-			<div style={{float: 'left'}} onChange={({target: {value}})=> setSelected(value)}>
-				<label class='switch'>
-              	<input type='checkbox' onChange={_ => setIsTraining(!isTraining)}/>
-              	<div class='slider round'></div>
-              </label>
-            </div>
-            <input style={{float: 'right'}} type='file' accept='application/json' onChange={({target: {files: [file]}}) => {
-              if (!file) return
-              let reader = new FileReader()
-              reader.readAsText(file, 'UTF-8')
-              reader.onload = ({target: {result}}) => setData(JSON.parse(result))
-              reader.onerror = _ => console.error('Error reading the file')
-            }} />
+		function App() {
+      const [isTraining, setIsTraining] = React.useState(false)
+      const [chart, setChart] = React.useState(null)
+      const [file, setFile] = React.useState(null)
+      const [data, setData] = React.useState({
+        logs: {
+          training: [],
+          player_elo: [],
+          opponent_elo: []
+        }
+      })
+
+      React.useEffect(() => {
+        if (chart) chart.destroy() setChart(new Chart(document.getElementById('chart'), {
+          type: 'line',
+          data: isTraining ? {
+            labels: new Array(data.logs.training.length).fill(null).map((_, i) => i + 1),
+            datasets: [{
+              label: 'Max Loss',
+              backgroundColor: '#ff595e6e',
+              borderColor: '#ff595e',
+              data: data.logs.training.map(log => log.loss[0]),
+              fill: '+2'
+            }, {
+              label: 'Avg. Loss',
+              backgroundColor: '#ff595e',
+              borderColor: '#ff595e',
+              data: data.logs.training.map(log => log.loss[1])
+            }, {
+              label: 'Min Loss',
+              backgroundColor: '#ff595e',
+              borderColor: '#ff595e',
+              data: data.logs.training.map(log => log.loss[2])
+            }, {
+              label: 'Max Policy Loss',
+              backgroundColor: '#ffca3a6e',
+              borderColor: '#ffca3a',
+              data: data.logs.training.map(log => log.ActionProbabilities_loss[0]),
+              fill: '+2'
+            }, {
+              label: 'Avg. Policy Loss',
+              backgroundColor: '#ffca3a',
+              borderColor: '#ffca3a',
+              data: data.logs.training.map(log => log.ActionProbabilities_loss[1])
+            }, {
+              label: 'Min Policy Loss',
+              backgroundColor: '#ffca3a',
+              borderColor: '#ffca3a',
+              data: data.logs.training.map(log => log.ActionProbabilities_loss[2])
+            }, {
+              label: 'Max Value Loss ',
+              backgroundColor: '#8ac9266e',
+              borderColor: '#8ac926',
+              data: data.logs.training.map(log => log.Value_loss[0]),
+              fill: '+2'
+            }, {
+              label: 'Avg. Value Loss',
+              backgroundColor: '#8ac9266e',
+              borderColor: '#8ac926',
+              data: data.logs.training.map(log => log.Value_loss[1])
+            }, {
+              label: 'Min Value Loss',
+              backgroundColor: '#8ac9266e',
+              borderColor: '#8ac926',
+              data: data.logs.training.map(log => log.Value_loss[2])
+            }, {
+              label: 'Max Value MSE',
+              backgroundColor: '#6a4c936e',
+              borderColor: '#6a4c93',
+              data: data.logs.training.map(log => log.Value_mse[0]),
+              fill: '+2'
+            }, {
+              label: 'Avg. Value MSE',
+              backgroundColor: '#6a4c93',
+              borderColor: '#6a4c93',
+              data: data.logs.training.map(log => log.Value_mse[1])
+            }, {
+              label: 'Min Value MSE',
+              backgroundColor: '#6a4c93',
+              borderColor: '#6a4c93',
+              data: data.logs.training.map(log => log.Value_mse[2])
+            }]
+          } : {
+            labels: new Array(data.logs.player_elo.length).fill(null).map((_, i) => i + 1),
+            datasets: [{
+              label: 'Latest Model',
+              backgroundColor: '#ff595e',
+              borderColor: '#ff595e',
+              data: data.logs.player_elo
+            }, {
+              label: 'Opponent',
+              backgroundColor: '#ffca3a',
+              borderColor: '#ffca3a',
+              data: data.logs.opponent_elo
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: 'top',
+              },
+              title: {
+                display: true,
+                text: 'Training History'
+              }
+            }
+          },
+        }))
+      }, [isTraining, data])
+
+      return (
+        <div>
+          <div style={{float: 'left'}} onChange={({target: {value}})=> setSelected(value)}>
+            <label class='switch'>
+              <input type='checkbox' onChange={_ => setIsTraining(!isTraining)}/>
+              <div class='slider round'></div>
+            </label>
           </div>
-        )
-      }
-      ReactDOM.render(
-        <App />,
-        document.getElementById('root')
+          <input style={{float: 'right'}} type='file' accept='application/json' onChange={({target: {files: [file]}}) => {
+            if (!file) return
+            let reader = new FileReader()
+            reader.readAsText(file, 'UTF-8')
+            reader.onload = ({target: {result}}) => setData(JSON.parse(result))
+            reader.onerror = _ => console.error('Error reading the file')
+          }}/>
+        </div>
       )
-    </script>
-  </body>
+    }
+    
+    ReactDOM.render(<App/>, document.getElementById('root'))
+  </script>
+</body>
 </html>

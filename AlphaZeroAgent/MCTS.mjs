@@ -22,7 +22,7 @@ export class MCTS {
   }
 
   static get n_states() {
-    return [81 * 2 + 9 * 2 + 9] // [2, 9, 9]
+    return [81 * 2 + 9 * 2 + 9]
   }
 
   static get n_actions() {
@@ -59,15 +59,6 @@ export class MCTS {
 
       if (actions.length == 0) {
         console.log(`current max_U = ${max_U}`)
-        // console.log({U: current.U, V: current.V, N: current.N})
-        // console.log(current.game.player)
-        // console.log(current.game.score)
-        // current.game.render()
-        // console.log(Object.keys(children))
-        // console.log(Object.values(children).map(node => ({U: node.U, V: node.V, N: node.N})))
-        // console.log(children[Object.keys(children)[0]].game.player)
-        // console.log(children[Object.keys(children)[0]].game.score)
-        // children[Object.keys(children)[0]].game.render()
         throw 'No action to explore'
       }
 
@@ -86,12 +77,6 @@ export class MCTS {
           current.game.acquired.flat().map(cell => cell == -1 ? 1.0 : 0.0),
           [...Array(3).keys()].map(i => current.game.available.slice(i * 27, i * 27 + 27)).map(row => [...Array(3).keys()].map(j => row.slice(j * 9, j * 9 + 9)).map(block => block.some(cell => cell) ? 1.0 : 0.0)).flat()
         ),
-
-        // [
-        // 	Array(3).fill(current.game.acquired.map(row => row.map(cell => cell != 2 ? cell * -1 * current.game.player : cell)).map(row => Array(3).fill(row).reduce((x, y) => x.concat(y), []))).reduce((x, y) => x.concat(y), []),
-        // 	current.game.board.map(row => Game.transposeBlock(row)).flat().map(row => row.flat()).map(row => row.map(cell => cell * -1 * current.game.player))
-        // ]
-
         availability: current.game.available.map(cell => cell ? 1.0 : 0.0)
       }
 
@@ -99,42 +84,6 @@ export class MCTS {
         tf.tensor(current.nn_input.state, MCTS.n_states, 'float32').expandDims(),
         tf.tensor(current.nn_input.availability, [MCTS.n_actions], 'float32').expandDims()
       ])
-
-
-
-
-
-      // console.log(p)
-      // console.log(v)
-
-
-
-
-
-      if (p.isNaN().any().dataSync()[0] || v.isNaN().any().dataSync()[0]) {
-        console.log('-----------')
-        console.log(tf.tensor(current.nn_input.state, MCTS.n_states, 'float32').expandDims().arraySync())
-        console.log(tf.tensor(current.nn_input.availability, [MCTS.n_actions], 'float32').expandDims().arraySync())
-        console.log('---- * ----')
-        policy.getWeights().forEach(tensor => {
-          console.log(tensor)
-          tensor.print()
-        })
-        console.log('---- | ----')
-        console.log('--- \|/ ---')
-        console.log('---- v ----')
-        console.log(p.arraySync())
-        console.log(v.arraySync())
-      }
-
-
-
-
-
-
-
-
-
 
       current.P = p.squeeze().arraySync()
       current.V = v.squeeze().arraySync()
@@ -181,7 +130,7 @@ export class MCTS {
 
     if (sum > 0) // normalize the probability
       prob = prob.map(p => p / sum)
-    else {                          // if sum is zero, just make things random
+    else {       // if sum is zero, just make things random
       let n_child = Object.keys(children).length
       prob = [...Array(MCTS.n_actions).keys()].map(action => action in children ? (1.0 / n_child) : 0.0)
     }

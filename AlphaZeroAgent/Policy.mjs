@@ -162,19 +162,11 @@ export class Policy {
 
   compile() {
     this.#model.compile({
-      lossWeights: {
-        ActionProbabilities: 1,
-        Value: 1
-      },
       optimizer: tf.train.rmsprop(this.#learning_rate),
-      // tf.train.sgd(this.#learning_rate)
-
       loss: {
         ActionProbabilities: (truth, prediction) => {
           let constant = truth.add(Number.EPSILON).log().mul(truth)
           return prediction.add(Number.EPSILON).log().mul(truth).sub(constant).sum(1).neg().sum()
-
-          // return prediction.add(Number.EPSILON).log().mul(truth).sum(1).neg().sum()
         },
         Value: (truth, prediction) => prediction.squaredDifference(truth).sum()
       },
